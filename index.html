@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bagan Mikroskop Biologis - Interaktif</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent: #7c3aed; /* violet-600 */
+      --accent-700: #6d28d9;
+      --accent-800: #5b21b6;
+      --soft: rgba(124,58,237,0.15);
+    }
+    body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    /* Highlight style for parts */
+    .part { cursor: pointer; transition: transform .2s ease, filter .2s ease; }
+    .part:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .part.active .stroke { stroke: var(--accent); stroke-width: 4; }
+    .part.active .fill-accent { fill: var(--accent); }
+    .part .hit { fill: transparent; cursor: pointer; }
+    /* Tooltip style */
+    .tip {
+      position: absolute; pointer-events: none; transform: translate(-50%, -110%);
+      background: #0b1020; color: white; padding: .4rem .6rem; border-radius: .5rem; font-size: .75rem;
+      border: 1px solid rgba(255,255,255,.08); white-space: nowrap;
+      box-shadow: 0 8px 30px rgba(0,0,0,.35);
+    }
+    /* Nice scrollbars */
+    .pretty-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+    .pretty-scroll::-webkit-scrollbar-track { background: transparent; }
+    .pretty-scroll::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(124,58,237,.65), rgba(56,189,248,.55));
+      border-radius: 999px; border: 2px solid transparent; background-clip: padding-box;
+    }
+    .pretty-scroll { scrollbar-width: thin; scrollbar-color: rgba(124,58,237,.6) transparent; }
+    /* Focus ring for accessibility */
+    .focusable:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: .5rem; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950 text-slate-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">
+      <div>
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">
+          Bagan Mikroskop Biologis
+        </h1>
+        <p class="text-slate-300 mt-2 max-w-2xl">
+          Klik bagian pada ilustrasi untuk melihat nama dan fungsinya. Cocok untuk belajar cepat dan praktikum.
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <button id="resetBtn" class="focusable px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 active:bg-violet-800 transition">
+          Reset Sorotan
+        </button>
+        <button id="tourBtn" class="focusable px-4 py-2 rounded-xl bg-cyan-500/20 text-cyan-300 hover:bg-cyan-400/20 border border-cyan-400/30 transition">
+          Tur Singkat
+        </button>
+        <button id="quizBtn" class="focusable px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-400/20 border border-emerald-400/30 transition">
+          Mode Kuis
+        </button>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <div class="grid lg:grid-cols-2 gap-8 items-stretch">
+      <!-- Diagram Card -->
+      <section class="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-b from-slate-800/60 to-slate-900/60 border border-white/10 shadow-2xl overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div class="absolute -top-24 -right-24 w-72 h-72 bg-violet-600/10 rounded-full blur-3xl"></div>
+          <div class="absolute -bottom-16 -left-16 w-64 h-64 bg-cyan-400/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-semibold text-slate-200">Ilustrasi Interaktif</h2>
+          <span id="activeHint" class="text-sm text-slate-400">Tidak ada bagian dipilih</span>
+        </div>
+
+        <div class="relative bg-slate-900/40 rounded-xl border border-white/10 p-3 sm:p-4">
+          <!-- Responsive SVG container -->
+          <div class="w-full aspect-[4/3] md:aspect-[5/4] lg:aspect-[1.2/1]">
+            <!-- SVG Microscope -->
+            <svg id="microscopeSVG" viewBox="0 0 800 650" class="w-full h-full">
+              <!-- Floor shadow -->
+              <ellipse cx="400" cy="610" rx="280" ry="24" fill="rgba(0,0,0,.35)"></ellipse>
+
+              <!-- Base -->
+              <g class="part focusable" tabindex="0" data-key="base">
+                <rect x="250" y="560" width="300" height="35" rx="16" fill="#0f172a" class="stroke" stroke="#334155" stroke-width="3"></rect>
+                <rect x="290" y="535" width="220" height="28" rx="12" fill="#111827"></rect>
+                <rect class="hit" x="250" y="535" width="300" height="60"></rect>
+              </g>
+
+              <!-- Arm -->
+              <g class="part focusable" tabindex="0" data-key="arm">
+                <path d="M410 180 C330 220, 300 310, 300 420 L300 520 L360 520 L360 430 C360 355, 385 285, 450 250 C480 235, 495 220, 500 200 C505 180, 430 165, 410 180 Z"
+                      fill="#0f172a" class="stroke" stroke="#334155" stroke-width="3"></path>
+                <rect class="hit" x="280" y="170" width="250" height="360"></rect>
+              </g>
+
+              <!-- Body Tube -->
+              <g class="part focusable" tabindex="0" data-key="tube">
+                <rect x="430" y="150" width="30" height="140" rx="8" fill="#111827" class="stroke" stroke="#334155"></rect>
+                <rect class="hit" x="420" y="145" width="50" height="160"></rect>
+              </g>
+
+              <!-- Eyepiece -->
+              <g class="part focusable" tabindex="0" data-key="eyepiece">
+                <rect x="425" y="110" width="40" height="50" rx="8" fill="#1f2937" class="stroke" stroke="#334155"></rect>
+                <rect x="430" y="100" width="30" height="18" rx="6" fill="#0ea5e9"></rect>
+                <rect class="hit" x="415" y="95" width="60" height="70"></rect>
+              </g>
+
+              <!-- Revolving nosepiece -->
+              <g class="part focusable" tabindex="0" data-key="revolver">
+                <circle cx="446" cy="300" r="26" fill="#0b1324" class="stroke" stroke="#334155"></circle>
+                <rect class="hit" x="416" y="270" width="60" height="60"></rect>
+              </g>
+
+              <!-- Objectives group -->
+              <g class="part focusable" tabindex="0" data-key="objective">
+                <!-- 10x -->
+                <rect x="470" y="300" width="18" height="70" rx="6" fill="#1f2937" class="stroke" stroke="#334155"></rect>
+                <circle cx="479" cy="305" r="6" fill="#22d3ee"></circle>
+                <!-- 40x -->
+                <rect x="445" y="325" width="18" height="95" rx="6" fill="#1f2937" class="stroke" stroke="#334155"></rect>
+                <circle cx="454" cy="330" r="6" fill="#f59e0b"></circle>
+                <!-- 4x -->
+                <rect x="496" y="320" width="15" height="55" rx="6" fill="#1f2937" class="stroke" stroke="#334155"></rect>
+                <circle cx="503.5" cy="324" r="5" fill="#22c55e"></circle>
+                <rect class="hit" x="438" y="298" width="90" height="130"></rect>
+              </g>
+
+              <!-- Stage -->
+              <g class="part focusable" tabindex="0" data-key="stage">
+                <rect x="320" y="390" width="260" height="18" rx="6" fill="#0f172a" class="stroke" stroke="#334155"></rect>
+                <!-- Glass slide -->
+                <rect x="370" y="392" width="160" height="12" rx="3" fill="rgba(56,189,248,0.15)" stroke="rgba(56,189,248,0.5)"></rect>
+                <rect class="hit" x="315" y="380" width="270" height="40"></rect>
+              </g>
+
+              <!-- Stage clips -->
+              <g class="part focusable" tabindex="0" data-key="clips">
+                <rect x="370" y="385" width="40" height="6" rx="3" fill="#374151"></rect>
+                <rect x="490" y="385" width="40" height="6" rx="3" fill="#374151"></rect>
+                <rect class="hit" x="360" y="377" width="180" height="20"></rect>
+              </g>
+
+              <!-- Mechanical stage knobs -->
+              <g class="part focusable" tabindex="0" data-key="mechknob">
+                <circle cx="585" cy="430" r="16" fill="#0b1324" class="stroke" stroke="#334155"></circle>
+                <circle cx="610" cy="440" r="22" fill="#0b1324" class="stroke" stroke="#334155"></circle>
+                <rect class="hit" x="570" y="412" width="60" height="46"></rect>
+              </g>
+
+              <!-- Condenser -->
+              <g class="part focusable" tabindex="0" data-key="condenser">
+                <rect x="430" y="410" width="40" height="22" rx="6" fill="#111827" class="stroke" stroke="#334155"></rect>
+                <rect class="hit" x="415" y="402" width="70" height="34"></rect>
+              </g>
+
+              <!-- Diaphragm -->
+              <g class="part focusable" tabindex="0" data-key="diaphragm">
+                <circle cx="450" cy="440" r="12" fill="#0b1324" class="stroke" stroke="#334155"></circle>
+                <rect class="hit" x="430" y="425" width="40" height="30"></rect>
+              </g>
+
+              <!-- Illuminator / Light source -->
+              <g class="part focusable" tabindex="0" data-key="light">
+                <rect x="430" y="510" width="42" height="22" rx="8" fill="#0b1324" class="stroke" stroke="#334155"></rect>
+                <circle cx="451" cy="521" r="6" class="fill-accent"></circle>
+                <rect class="hit" x="420" y="500" width="60" height="40"></rect>
+              </g>
+
+              <!-- Coarse Focus -->
+              <g class="part focusable" tabindex="0" data-key="coarse">
+                <circle cx="315" cy="390" r="30" fill="#0b1324" class="stroke" stroke="#334155"></circle>
+                <rect class="hit" x="285" y="360" width="60" height="60"></rect>
+              </g>
+
+              <!-- Fine Focus -->
+              <g class="part focusable" tabindex="0" data-key="fine">
+                <circle cx="358" cy="402" r="18" fill="#0b1324" class="stroke" stroke="#334155"></circle>
+                <rect class="hit" x="340" y="384" width="36" height="36"></rect>
+              </g>
+
+              <!-- Power switch (generic) -->
+              <g class="part focusable" tabindex="0" data-key="power">
+                <rect x="520" y="540" width="28" height="18" rx="6" fill="#0b1324" class="stroke" stroke="#334155"></rect>
+                <circle cx="534" cy="549" r="5" fill="#16a34a"></circle>
+                <rect class="hit" x="510" y="530" width="48" height="36"></rect>
+              </g>
+            </svg>
+          </div>
+
+          <!-- Floating tooltip -->
+          <div id="tooltip" class="tip hidden">Lensa Okuler</div>
+        </div>
+
+        <!-- Chips: quick select -->
+        <div class="mt-4 flex flex-wrap gap-2 max-h-28 overflow-auto pretty-scroll">
+          <button data-jump="eyepiece" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Okuler
+          </button>
+          <button data-jump="tube" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Tabung
+          </button>
+          <button data-jump="revolver" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Revolver
+          </button>
+          <button data-jump="objective" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Objektif
+          </button>
+          <button data-jump="stage" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Meja Benda
+          </button>
+          <button data-jump="clips" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Penjepit
+          </button>
+          <button data-jump="mechknob" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Penggerak Mekanis
+          </button>
+          <button data-jump="condenser" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Kondensor
+          </button>
+          <button data-jump="diaphragm" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Diafragma
+          </button>
+          <button data-jump="light" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Lampu
+          </button>
+          <button data-jump="coarse" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Fokus Kasar
+          </button>
+          <button data-jump="fine" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Fokus Halus
+          </button>
+          <button data-jump="arm" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Lengan
+          </button>
+          <button data-jump="base" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Kaki/Dasar
+          </button>
+          <button data-jump="power" class="chip focusable px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm">
+            Tombol Daya
+          </button>
+        </div>
+      </section>
+
+      <!-- Details Card -->
+      <aside class="rounded-2xl p-5 sm:p-6 bg-gradient-to-b from-slate-800/60 to-slate-900/60 border border-white/10 shadow-2xl flex flex-col">
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-lg font-semibold text-slate-200">Nama & Fungsi</h2>
+          <div class="text-xs text-slate-400">
+            Mode: <span id="modeLabel" class="px-2 py-1 rounded bg-white/5 border border-white/10">Eksplorasi</span>
+          </div>
+        </div>
+
+        <div id="infoPanel" class="mt-4 rounded-xl bg-slate-900/50 border border-white/10 p-4">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-lg bg-violet-600/20 border border-violet-600/40 flex items-center justify-center text-violet-300">
+              ⓘ
+            </div>
+            <div>
+              <h3 id="partTitle" class="text-xl font-semibold">Pilih bagian pada ilustrasi</h3>
+              <p id="partDesc" class="text-slate-300 mt-1">
+                Klik bagian mikroskop atau pakai tombol “Tur Singkat” untuk mengikuti urutan belajar yang direkomendasikan.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick tips -->
+        <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="rounded-xl p-4 bg-white/5 border border-white/10">
+            <div class="text-sm text-slate-300">
+              • Mulai dari objektif terendah untuk fokus awal
+            </div>
+          </div>
+          <div class="rounded-xl p-4 bg-white/5 border border-white/10">
+            <div class="text-sm text-slate-300">
+              • Sesuaikan diafragma untuk kontras yang pas
+            </div>
+          </div>
+          <div class="rounded-xl p-4 bg-white/5 border border-white/10">
+            <div class="text-sm text-slate-300">
+              • Gunakan fokus halus pada perbesaran tinggi
+            </div>
+          </div>
+          <div class="rounded-xl p-4 bg-white/5 border border-white/10">
+            <div class="text-sm text-slate-300">
+              • Kondensor sejajarkan ke bawah sampel
+            </div>
+          </div>
+        </div>
+
+        <!-- List of parts with mini descriptions -->
+        <div class="mt-6 flex-1 overflow-auto pretty-scroll rounded-xl bg-slate-900/40 border border-white/10">
+          <ul id="listPanel" class="divide-y divide-white/5">
+            <!-- List will be injected -->
+          </ul>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-10 text-center text-slate-400 text-sm">
+      Canva Code • Mikroskop Biologis • Interaktif
+    </footer>
+  </div>
+
+  <script>
+    // Data for parts
+    const PARTS = {
+      eyepiece: {
+        name: "Lensa Okuler",
+        desc: "Fungsi: tempat mata mengamati citra akhir dan memberi perbesaran tambahan (umumnya 10x). Tips: pastikan karet pelindung mata nyaman dan jarak mata tidak terlalu dekat agar bidang pandang penuh terlihat."
+      },
+      tube: {
+        name: "Tabung Mikroskop",
+        desc: "Fungsi: menjaga jarak optik tetap antara okuler dan objektif sehingga fokus dan pembesaran konsisten. Catatan: tabung yang goyah bisa membuat fokus mudah hilang."
+      },
+      revolver: {
+        name: "Revolver (Pemutar Objektif)",
+        desc: "Fungsi: memilih lensa objektif secara cepat. Gunakan klik penuh hingga terdengar ‘kunci’ supaya jalur optik tepat dan gambar tidak kabur atau vignette."
+      },
+      objective: {
+        name: "Lensa Objektif",
+        desc: "Fungsi: lensa utama pembentuk detail. Pilihan umum 4x (pencarian), 10x (umum), 40x (detail), 100x (dengan minyak imersi). Tips: mulai dari 4x/10x dulu sebelum naik agar sampel mudah ditemukan."
+      },
+      stage: {
+        name: "Meja Benda (Meja Preparat)",
+        desc: "Fungsi: alas datar tempat kaca objek diletakkan. Pastikan kaca objek rata dan berada tepat di bawah objektif untuk fokus yang stabil."
+      },
+      clips: {
+        name: "Penjepit Kaca Objek",
+        desc: "Fungsi: menahan kaca objek agar tidak bergeser saat digeser atau difokuskan. Gunakan penjepit dengan tekanan cukup agar tidak merusak kaca."
+      },
+      mechknob: {
+        name: "Penggerak Mekanis (Stage Knobs)",
+        desc: "Fungsi: menggeser sampel kiri–kanan dan depan–belakang secara halus. Manfaat: memetakan area sampel secara sistematis tanpa menyentuh kaca objek langsung."
+      },
+      condenser: {
+        name: "Kondensor",
+        desc: "Fungsi: memusatkan cahaya ke sampel untuk ketajaman dan kontras optimal. Aturan cepat: posisikan dekat bawah meja benda dan sejajarkan berkas cahaya pada perbesaran sedang–tinggi."
+      },
+      diaphragm: {
+        name: "Diafragma/Iris",
+        desc: "Fungsi: mengatur banyaknya cahaya dan kontras. Buka lebih lebar untuk sampel gelap/tebal, tutup sedikit untuk meningkatkan kontras pada detail halus."
+      },
+      light: {
+        name: "Sumber Cahaya/Lampu",
+        desc: "Fungsi: menerangi sampel dari bawah. Sesuaikan tingkat terang agar tidak terlalu silau (menghapus detail) atau terlalu redup (menurunkan resolusi)."
+      },
+      coarse: {
+        name: "Knop Fokus Kasar (Makrometer)",
+        desc: "Fungsi: mengubah fokus dengan langkah besar untuk menemukan fokus awal. Gunakan hanya pada perbesaran rendah untuk menghindari lensa menyentuh kaca objek."
+      },
+      fine: {
+        name: "Knop Fokus Halus (Mikrometer)",
+        desc: "Fungsi: penyetelan fokus kecil untuk mempertajam detail, terutama pada 40x–100x. Putar perlahan hingga tekstur terlihat paling tajam."
+      },
+      arm: {
+        name: "Lengan (Arm)",
+        desc: "Fungsi: rangka penopang. Saat memindahkan mikroskop, pegang lengan dengan satu tangan dan sangga dasar dengan tangan lain untuk stabilitas."
+      },
+      base: {
+        name: "Kaki/Dasar (Base)",
+        desc: "Fungsi: menopang seluruh instrumen agar kokoh dan menyerap getaran. Letakkan di meja datar untuk mengurangi guncangan."
+      },
+      power: {
+        name: "Tombol Daya",
+        desc: "Fungsi: menyalakan/mematikan dan terkadang mengatur intensitas lampu. Biasakan mematikan setelah penggunaan untuk memperpanjang umur lampu."
+      }
+    };
+
+    // Recommended tour order
+    const TOUR_ORDER = ["eyepiece","tube","revolver","objective","stage","clips","mechknob","condenser","diaphragm","light","coarse","fine","arm","base","power"];
+
+    // State
+    let activeKey = null;
+    let mode = "explore"; // explore | tour | quiz
+    let tourIndex = 0;
+    let quizTarget = null;
+
+    // Elements
+    const svg = document.getElementById("microscopeSVG");
+    const infoTitle = document.getElementById("partTitle");
+    const infoDesc = document.getElementById("partDesc");
+    const activeHint = document.getElementById("activeHint");
+    const tooltip = document.getElementById("tooltip");
+    const listPanel = document.getElementById("listPanel");
+    const modeLabel = document.getElementById("modeLabel");
+
+    const resetBtn = document.getElementById("resetBtn");
+    const tourBtn = document.getElementById("tourBtn");
+    const quizBtn = document.getElementById("quizBtn");
+
+    // Build list panel
+    function buildList() {
+      const frag = document.createDocumentFragment();
+      Object.entries(PARTS).forEach(([key, {name, desc}]) => {
+        const li = document.createElement("li");
+        li.className = "group p-4 hover:bg-white/5 transition";
+        li.innerHTML = `
+          <div class="flex items-start gap-3">
+            <button data-jump="${key}" class="focusable shrink-0 mt-1 w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-slate-300 group-hover:bg-white/10">#</button>
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="font-semibold text-slate-100">${name}</h4>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-violet-600/20 text-violet-300 border border-violet-600/30">${key}</span>
+              </div>
+              <p class="text-sm text-slate-300 mt-1">${desc}</p>
+            </div>
+          </div>
+        `;
+        frag.appendChild(li);
+      });
+      listPanel.innerHTML = "";
+      listPanel.appendChild(frag);
+    }
+    buildList();
+
+    // Helpers
+    function clearActive() {
+      svg.querySelectorAll(".part.active").forEach(el => el.classList.remove("active"));
+      activeKey = null;
+      infoTitle.textContent = "Pilih bagian pada ilustrasi";
+      infoDesc.textContent = "Klik bagian mikroskop atau pakai tombol “Tur Singkat” untuk mengikuti urutan belajar yang direkomendasikan.";
+      activeHint.textContent = "Tidak ada bagian dipilih";
+    }
+
+    function setActiveByKey(key, announce = true) {
+      svg.querySelectorAll(".part").forEach(el => {
+        if (el.dataset.key === key) el.classList.add("active");
+        else el.classList.remove("active");
+      });
+      activeKey = key;
+      const d = PARTS[key];
+      if (!d) return;
+      infoTitle.textContent = d.name;
+      infoDesc.textContent = d.desc;
+      activeHint.textContent = d.name;
+      if (announce) {
+        infoDesc.setAttribute("aria-live","polite");
+        infoDesc.focus?.();
+      }
+    }
+
+    function nextTourStep() {
+      if (tourIndex >= TOUR_ORDER.length) {
+        mode = "explore";
+        modeLabel.textContent = "Eksplorasi";
+        tourBtn.textContent = "Tur Singkat";
+        activeHint.textContent = "Tur selesai! Jelajahi bebas.";
+        return;
+      }
+      const key = TOUR_ORDER[tourIndex++];
+      setActiveByKey(key);
+      // Brief pulse effect by toggling class
+      const el = [...svg.querySelectorAll(".part")].find(p => p.dataset.key === key);
+      if (el) {
+        el.style.filter = "drop-shadow(0 0 0 rgba(124,58,237,0.0))";
+        setTimeout(()=>{ el.style.filter = "drop-shadow(0 6px 16px rgba(124,58,237,0.35))"; }, 0);
+        setTimeout(()=>{ el.style.filter = ""; }, 500);
+      }
+    }
+
+    function startTour() {
+      mode = "tour";
+      modeLabel.textContent = "Tur";
+      tourBtn.textContent = "Langkah Berikutnya";
+      tourIndex = 0;
+      nextTourStep();
+    }
+
+    function endTour() {
+      mode = "explore";
+      modeLabel.textContent = "Eksplorasi";
+      tourBtn.textContent = "Tur Singkat";
+    }
+
+    function startQuiz() {
+      mode = "quiz";
+      modeLabel.textContent = "Kuis";
+      // pick random target
+      const keys = Object.keys(PARTS);
+      quizTarget = keys[Math.floor(Math.random()*keys.length)];
+      clearActive();
+      activeHint.textContent = `Kuis: klik bagian "${PARTS[quizTarget].name}"`;
+      quizBtn.textContent = "Ulangi Kuis";
+    }
+
+    // Event wiring for SVG parts
+    svg.addEventListener("click", (e) => {
+      const g = e.target.closest(".part");
+      if (!g) return;
+      const key = g.dataset.key;
+
+      if (mode === "quiz") {
+        if (key === quizTarget) {
+          setActiveByKey(key);
+          activeHint.textContent = `Benar! ${PARTS[key].name}`;
+          // prepare next quiz
+          setTimeout(startQuiz, 1200);
+        } else {
+          // Shake effect
+          g.style.transform = "translateY(0)";
+          g.animate([{transform:"translateX(0)"},{transform:"translateX(-4px)"},{transform:"translateX(4px)"},{transform:"translateX(0)"}], {duration:300, iterations:1});
+          activeHint.textContent = "Coba lagi...";
+        }
+        return;
+      }
+
+      if (mode === "tour") {
+        setActiveByKey(key);
+        // If user clicked the expected step, move forward
+        if (key === TOUR_ORDER[tourIndex-1]) {
+          setTimeout(nextTourStep, 800);
+        } else {
+          // Keep tour running, don't auto-advance
+        }
+        return;
+      }
+
+      // Explore mode
+      setActiveByKey(key);
+    });
+
+    // Keyboard support
+    svg.querySelectorAll(".part").forEach(el => {
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          el.click();
+        }
+      });
+    });
+
+    // Tooltip follow
+    const tooltipMap = {
+      eyepiece: "Lensa Okuler",
+      tube: "Tabung",
+      revolver: "Revolver",
+      objective: "Objektif",
+      stage: "Meja Benda",
+      clips: "Penjepit",
+      mechknob: "Penggerak Mekanis",
+      condenser: "Kondensor",
+      diaphragm: "Diafragma",
+      light: "Lampu",
+      coarse: "Fokus Kasar",
+      fine: "Fokus Halus",
+      arm: "Lengan",
+      base: "Dasar",
+      power: "Tombol Daya",
+    };
+    let tipVisible = false;
+
+    svg.addEventListener("mousemove", (e) => {
+      const target = e.target.closest(".part");
+      if (!target) {
+        if (tipVisible) {
+          tooltip.classList.add("hidden");
+          tipVisible = false;
+        }
+        return;
+      }
+      const key = target.dataset.key;
+      tooltip.textContent = tooltipMap[key] || "Bagian";
+      const rect = svg.getBoundingClientRect();
+      const x = e.clientX - rect.left; // relative
+      const y = e.clientY - rect.top;
+      tooltip.style.left = rect.left + x + "px";
+      tooltip.style.top = rect.top + y + "px";
+      if (!tipVisible) {
+        tooltip.classList.remove("hidden");
+        tipVisible = true;
+      }
+    });
+    svg.addEventListener("mouseleave", () => {
+      tooltip.classList.add("hidden");
+      tipVisible = false;
+    });
+
+    // Chips actions
+    document.querySelectorAll("[data-jump]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const key = btn.getAttribute("data-jump");
+        setActiveByKey(key);
+      });
+    });
+
+    // Buttons
+    resetBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      clearActive();
+      endTour();
+      quizBtn.textContent = "Mode Kuis";
+    });
+
+    tourBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (mode !== "tour") startTour();
+      else nextTourStep();
+    });
+
+    quizBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      startQuiz();
+    });
+
+    // Accessibility: announce initial state
+    activeHint.setAttribute("aria-live","polite");
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98308a228545ca4b',t:'MTc1ODUzMDg2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
